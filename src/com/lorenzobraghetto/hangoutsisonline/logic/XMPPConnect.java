@@ -42,6 +42,7 @@ public class XMPPConnect {
 			e.printStackTrace();
 		}
 
+		connection.disconnect();
 		return friends;
 	}
 }
