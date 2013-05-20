@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Hangouts isOnline</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_edit">Edit login information</string>
+    <string name="insertdialog">Insert user and password</string>
+    <string name="login_error">There is an error with user and password</string>
+
+</resources>
