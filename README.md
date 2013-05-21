@@ -1,8 +1,16 @@
 Hangout-isOnline
 ================
 
-The new Google Hangouts doesn't allow anymore to view if a buddy is online or offline.  With the old Gtalk connection it's still possible if someone is online even if he's using Hangouts from a PC or from Android.
+The new Google Hangouts doesn't allow anymore to view if a buddy is online or offline.
 
+With the old Gtalk connection it's still possible to know if someone is online and with app he's using with this combinations:
+-Gtalk online/away
+-Hangouts from PC online/away
+-Hangouts from mobile
+
+*Unfortunally at the moment it's impossible to know if someone is online or offline from mobile*
+
+If someone has a solution for that any contribution is helpfull!
 
     "Hangout isOnline" is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
