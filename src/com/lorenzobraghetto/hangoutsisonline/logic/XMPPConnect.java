@@ -15,11 +15,12 @@ public class XMPPConnect {
 
 	public static List<Friend> XMPPgetFriends(Context context) {
 		List<Friend> friends = new ArrayList<Friend>();
-		XMPPConnection connection = new XMPPConnection("gmail.com"); //Server is gmail.com for Google Talk.
+		final XMPPConnection connection = new XMPPConnection("gmail.com"); //Server is gmail.com for Google Talk.
 		SharedPreferences pref = context.getSharedPreferences("Login", Context.MODE_PRIVATE);
 		try {
 			connection.connect();
 			connection.login(pref.getString("user", ""), pref.getString("password", "")); //Username and password.
+
 		} catch (XMPPException e) {
 			e.printStackTrace();
 			return null;
@@ -35,8 +36,8 @@ public class XMPPConnect {
 						friends.add(new Friend(r.getName(), roasters.getPresence(user)));
 					else
 						friends.add(new Friend(user, roasters.getPresence(user)));
-
 				}
+
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -45,4 +46,5 @@ public class XMPPConnect {
 		connection.disconnect();
 		return friends;
 	}
+
 }

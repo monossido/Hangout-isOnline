@@ -6,5 +6,13 @@
     <string name="action_edit">Modifica le informazioni di login</string>
     <string name="insertdialog">Inserisci user e password</string>
     <string name="login_error">C\'è un problema con user e password</string>
+    <string name="info">Nessun dato personale viene raccolto con l\'utilizzo di questa applicazione.\nTutti i sorgenti sono disponibili su github\nhttps://github.com/monossido/Hangout-isOnline</string>
+
+    <!-- status -->
+    <string name="hangouts_mobile">Hangouts - da mobile o offline</string>
+    <string name="hangouts_pc_away">Hangouts - Non disponibile dal PC</string>
+    <string name="gtalk_away">Gtalk - Non disponibile</string>
+    <string name="hangouts_pc_online">Hangouts - online dal PC</string>
+    <string name="gtalk_online">"Gtalk - Online"</string>
 
 </resources>
