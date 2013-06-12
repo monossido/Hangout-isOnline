@@ -1,14 +1,37 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
+        android:id="@+id/action_search"
+        android:actionViewClass="com.actionbarsherlock.widget.SearchView"
+        android:icon="@android:drawable/ic_menu_search"
+        android:orderInCategory="100"
+        android:showAsAction="always|collapseActionView"
+        android:title="@string/action_search"/>
+    <item
         android:id="@+id/action_refresh"
+        android:icon="@drawable/ic_menu_refresh"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
         android:title="@string/action_refresh"/>
     <item
         android:id="@+id/action_edit"
+        android:icon="@android:drawable/ic_menu_edit"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
         android:title="@string/action_edit"/>
+    <item
+        android:id="@+id/action_info"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:title="@string/action_info"/>
+    <item
+        android:id="@+id/action_sort_by_status"
+        android:checkable="true"
+        android:checked="true"
+        android:icon="@android:drawable/ic_menu_sort_alphabetically"
+        android:orderInCategory="100"
+        android:showAsAction="never"
+        android:title="@string/action_sort_by_status"/>
 
 </menu>

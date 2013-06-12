@@ -6,7 +6,12 @@
     <string name="action_edit">Modifica le informazioni di login</string>
     <string name="insertdialog">Inserisci user e password</string>
     <string name="login_error">C\'è un problema con user e password</string>
-    <string name="info">Nessun dato personale viene raccolto con l\'utilizzo di questa applicazione.\nTutti i sorgenti sono disponibili su github\nhttps://github.com/monossido/Hangout-isOnline</string>
+    <string name="conn_error">C\'è un problema con la connessione</string>
+    <string name="action_info">Info</string>
+    <string name="action_sort_by_status">Ordina per status</string>
+    <string name="action_search">Cerca</string>
+    <string name="info">Sviluppato da Lorenzo Braghetto aka monossido\nhttp://lorenzobraghetto.com\nmonossido@lorenzobraghetto.com
+        \ni sorgenti sono disponibili sotto licenza GPLv3 https://github.com/monossido/Hangout-isOnline</string>
 
     <!-- status -->
     <string name="hangouts_mobile">Hangouts - da mobile o offline</string>
