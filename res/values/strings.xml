@@ -12,6 +12,8 @@
     <string name="action_search">Search</string>
     <string name="info">Developed by Lorenzo Braghetto aka monossido\nhttp://lorenzobraghetto.com\nmonossido@lorenzobraghetto.com
         \nsources ara avaiable under GPLv3 license https://github.com/monossido/Hangout-isOnline</string>
+    <string name="on_connect">Connected</string>
+    <string name="on_friends">Downloading Friends list</string>
 
     <!-- status -->
     <string name="hangouts_mobile">Hangouts - from mobile or offline</string>

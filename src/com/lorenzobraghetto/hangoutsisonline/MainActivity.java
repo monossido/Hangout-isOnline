@@ -31,6 +31,7 @@ import android.provider.ContactsContract.Contacts.Photo;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
+import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -48,6 +49,7 @@ import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
+import com.lorenzobraghetto.hangoutsisonline.logic.CallBack;
 import com.lorenzobraghetto.hangoutsisonline.logic.Friend;
 import com.lorenzobraghetto.hangoutsisonline.logic.XMPPConnect;
 
@@ -62,12 +64,13 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 	private boolean rebuilded;
 	private SharedPreferences pref;
 	public ListAdapter listA;
+	public boolean loading;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
+		loading = false;
 		rebuilded = false;
 
 		progress = (ProgressBar) findViewById(R.id.progress);
@@ -80,7 +83,7 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 			if (result == ConnectionResult.SUCCESS) {
 				Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[] { "com.google" },
 						false, null, null, null, null);
-				startActivityForResult(intent, 0);
+				startActivityForResult(intent, 1);
 			} else {
 				GooglePlayServicesUtil.getErrorDialog(result, this, 1, new OnCancelListener() {
 
@@ -95,18 +98,43 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 
 	}
 
-	class connect extends AsyncTask<Void, Void, List<Friend>> {
+	class connect extends AsyncTask<Void, Integer, List<Friend>> {
 
 		@Override
 		protected void onPreExecute() {
 			super.onPreExecute();
+			loading = true;
+			supportInvalidateOptionsMenu();
 			progress.setVisibility(View.VISIBLE);
 			listV.setVisibility(View.GONE);
+
+		}
+
+		@Override
+		protected void onProgressUpdate(Integer... values) {
+			super.onProgressUpdate(values);
+			if (values[0] == 1)
+				Toast.makeText(MainActivity.this, R.string.on_connect, Toast.LENGTH_SHORT).show();
+			else if (values[0] == 2)
+				Toast.makeText(MainActivity.this, R.string.on_friends, Toast.LENGTH_SHORT).show();
+		}
+
+		class CallBackImpl implements CallBack {
+
+			@Override
+			public void onConnect() {
+				publishProgress(1);
+			}
+
+			@Override
+			public void onDownloadFriends() {
+				publishProgress(2);
+			}
 		}
 
 		@Override
 		protected List<Friend> doInBackground(Void... params) {
-			friends = XMPPConnect.XMPPgetFriends(MainActivity.this);
+			friends = XMPPConnect.XMPPgetFriends(MainActivity.this, new CallBackImpl());
 			if (friends != null) {
 				sortFriendsByStatus();
 				getBadge();
@@ -117,6 +145,8 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 		@Override
 		protected void onPostExecute(List<Friend> friends) {
 			super.onPostExecute(friends);
+			loading = false;
+			supportInvalidateOptionsMenu();
 			progress.setVisibility(View.GONE);
 			listV.setVisibility(View.VISIBLE);
 
@@ -125,7 +155,9 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 					Toast.makeText(MainActivity.this, R.string.login_error, Toast.LENGTH_LONG).show();
 				else {
 					rebuilded = true;
-					new AuthTask().execute(new String[] { pref.getString("user", "") });
+					String name = pref.getString("user", "");
+					if (name.length() > 0)
+						new AuthTask().execute(new String[] { name });
 				}
 			} else {
 				listA = new ListAdapter(MainActivity.this, friends, friendsContactUri, friendsContactPicture);
@@ -133,6 +165,22 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 			}
 
 		}
+	}
+
+	@Override
+	public boolean onPrepareOptionsMenu(Menu menu) {
+		if (loading) {
+			menu.getItem(0).setEnabled(false);
+			menu.getItem(1).setEnabled(false);
+			menu.getItem(2).setEnabled(false);
+			menu.getItem(4).setEnabled(false);
+		} else {
+			menu.getItem(0).setEnabled(true);
+			menu.getItem(1).setEnabled(true);
+			menu.getItem(2).setEnabled(true);
+			menu.getItem(4).setEnabled(true);
+		}
+		return true;
 	}
 
 	@Override
@@ -144,12 +192,14 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 	}
 
 	public void sortFriendsAlphabetically(List<Friend> friends) {
-		Collections.sort(friends, new Comparator<Friend>() {
-			@Override
-			public int compare(final Friend object1, final Friend object2) {
-				return object1.getUser().compareTo(object2.getUser());
-			}
-		});
+		if (friends != null) {
+			Collections.sort(friends, new Comparator<Friend>() {
+				@Override
+				public int compare(final Friend object1, final Friend object2) {
+					return object1.getUser().compareTo(object2.getUser());
+				}
+			});
+		}
 	}
 
 	public void sortFriendsByStatus() {
@@ -189,7 +239,7 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 		case R.id.action_edit:
 			Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[] { "com.google" },
 					false, null, null, null, null);
-			startActivityForResult(intent, 0);
+			startActivityForResult(intent, 1);
 			break;
 		case R.id.action_info:
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -207,14 +257,16 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 			builder.create().show();
 			break;
 		case R.id.action_sort_by_status:
-			if (item.isChecked()) {
-				item.setChecked(false);
-				sortFriendsAlphabetically(friends);
-			} else {
-				item.setChecked(true);
-				sortFriendsByStatus();
+			if (listA != null && friends != null) {
+				if (item.isChecked()) {
+					item.setChecked(false);
+					sortFriendsAlphabetically(friends);
+				} else {
+					item.setChecked(true);
+					sortFriendsByStatus();
+				}
+				listA.notifyDataSetChanged();
 			}
-			listA.notifyDataSetChanged();
 			break;
 		}
 		return true;
@@ -223,51 +275,61 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-
-		if (requestCode == 0 && resultCode == RESULT_OK) {
+		Log.v("HANGOUTS", "requestCode=" + requestCode + ", requestCode" + requestCode);
+		if (requestCode == 1 && resultCode == RESULT_OK) {
 			String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-			new AuthTask().execute(new String[] { accountName });
+			if (accountName.length() > 0)
+				new AuthTask().execute(new String[] { accountName });
 		}
 	}
 
-	private class AuthTask extends AsyncTask<String, Void, Void> {
+	private class AuthTask extends AsyncTask<String, Void, String> {
 
 		private String name;
 		private String token;
 
 		@Override
-		protected Void doInBackground(String... params) {
+		protected String doInBackground(String... params) {
 			name = params[0];
 			try {
 				token = GoogleAuthUtil.getToken(MainActivity.this, name, "oauth2:" + mScope);
 			} catch (IOException e) {
-				Toast.makeText(MainActivity.this, R.string.conn_error, Toast.LENGTH_LONG).show();
 				e.printStackTrace();
+				return "conn";
 			} catch (UserRecoverableAuthException userAuthEx) {
-				if (userAuthEx != null)
+				if (userAuthEx != null && userAuthEx.getIntent() != null)
 					startActivityForResult(
 							userAuthEx.getIntent(),
 							1);
 				else
-					Toast.makeText(MainActivity.this, R.string.login_error, Toast.LENGTH_LONG).show();
+					return "login";
 			} catch (GoogleAuthException e) {
-				Toast.makeText(MainActivity.this, R.string.login_error, Toast.LENGTH_LONG).show();
 				e.printStackTrace();
+				return "login";
+			} catch (IllegalArgumentException e) {
+				e.printStackTrace();
+				return "login";
 			}
 			return null;
 		}
 
 		@Override
-		protected void onPostExecute(Void result) {
+		protected void onPostExecute(String exception) {
+			Log.v("HANGOUTS", "exception=" + exception + ", user" + name + " token=" + token);
 
-			SharedPreferences pref = getSharedPreferences("Login", Context.MODE_PRIVATE);
+			if (exception == null) {
+				SharedPreferences pref = getSharedPreferences("Login", Context.MODE_PRIVATE);
 
-			Editor edit = pref.edit();
-			edit.putString("user", name);
-			edit.putString("token", token);
-			edit.commit();
+				Editor edit = pref.edit();
+				edit.putString("user", name);
+				edit.putString("token", token);
+				edit.commit();
 
-			new connect().execute();
+				new connect().execute();
+			} else if (exception.equals("login"))
+				Toast.makeText(MainActivity.this, R.string.login_error, Toast.LENGTH_LONG).show();
+			else if (exception.equals("conn"))
+				Toast.makeText(MainActivity.this, R.string.conn_error, Toast.LENGTH_LONG).show();
 
 		}
 	}
@@ -372,10 +434,12 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 
 	@Override
 	public boolean onQueryTextChange(String newText) {
-		if (newText.length() == 0)
-			listA.getFilter().filter(null);
-		else
-			listA.getFilter().filter(newText);
+		if (listA != null) {
+			if (newText.length() == 0)
+				listA.getFilter().filter(null);
+			else
+				listA.getFilter().filter(newText);
+		}
 		return false;
 	}
 
