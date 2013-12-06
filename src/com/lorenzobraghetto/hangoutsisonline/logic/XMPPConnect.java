@@ -32,7 +32,10 @@ public class XMPPConnect {
 
 		try {
 			connection.connect();
-			connection.login(pref.getString("user", ""), pref.getString("token", "")); //Username and password.
+			if (connection.isConnected())
+				connection.login(pref.getString("user", ""), pref.getString("token", "")); //Username and password.
+			else
+				return null;
 
 		} catch (XMPPException e) {
 

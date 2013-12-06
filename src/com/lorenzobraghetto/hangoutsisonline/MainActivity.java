@@ -1,8 +1,8 @@
 package com.lorenzobraghetto.hangoutsisonline;
 
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +17,6 @@ import android.content.DialogInterface.OnCancelListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -25,13 +24,13 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.provider.ContactsContract;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Contacts.Photo;
 import android.text.SpannableString;
 import android.text.method.LinkMovementMethod;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -275,7 +274,6 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
-		Log.v("HANGOUTS", "requestCode=" + requestCode + ", requestCode" + requestCode);
 		if (requestCode == 1 && resultCode == RESULT_OK) {
 			String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
 			if (accountName.length() > 0)
@@ -287,6 +285,16 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 
 		private String name;
 		private String token;
+
+		@Override
+		protected void onPreExecute() {
+			super.onPreExecute();
+			loading = true;
+			supportInvalidateOptionsMenu();
+			progress.setVisibility(View.VISIBLE);
+			listV.setVisibility(View.GONE);
+
+		}
 
 		@Override
 		protected String doInBackground(String... params) {
@@ -315,7 +323,10 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 
 		@Override
 		protected void onPostExecute(String exception) {
-			Log.v("HANGOUTS", "exception=" + exception + ", user" + name + " token=" + token);
+			loading = false;
+			supportInvalidateOptionsMenu();
+			progress.setVisibility(View.GONE);
+			listV.setVisibility(View.VISIBLE);
 
 			if (exception == null) {
 				SharedPreferences pref = getSharedPreferences("Login", Context.MODE_PRIVATE);
@@ -376,6 +387,7 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 				friendsContactUri.add(mContactUri);
 
 				String mThumbnailUri = mCursor.getString(mThumbnailColumn);
+
 				if (mThumbnailUri != null) {
 					Bitmap mThumbnail =
 							loadContactPhotoThumbnail(mThumbnailUri);
@@ -392,39 +404,30 @@ public class MainActivity extends SherlockActivity implements OnQueryTextListene
 	}
 
 	private Bitmap loadContactPhotoThumbnail(String photoData) {
-		AssetFileDescriptor afd = null;
-		try {
-			Uri thumbUri;
-			if (Build.VERSION.SDK_INT
-			>= Build.VERSION_CODES.HONEYCOMB) {
-				thumbUri = Uri.parse(photoData);
-			} else {
-				final Uri contactUri = Uri.withAppendedPath(
-						Contacts.CONTENT_URI, photoData);
-				thumbUri =
-						Uri.withAppendedPath(
-								contactUri, Photo.CONTENT_DIRECTORY);
-			}
-
-			afd = getContentResolver().
-					openAssetFileDescriptor(thumbUri, "r");
-
-			FileDescriptor fileDescriptor = afd.getFileDescriptor();
-			if (fileDescriptor != null) {
-				return BitmapFactory.decodeFileDescriptor(
-						fileDescriptor, null, null);
-			}
-		} catch (FileNotFoundException e) {
-
-		} finally {
-			if (afd != null) {
-				try {
-					afd.close();
-				} catch (IOException e) {
-				}
-			}
+		ParcelFileDescriptor afd = null;
+		Uri thumbUri;
+		if (Build.VERSION.SDK_INT
+		>= Build.VERSION_CODES.HONEYCOMB) {
+			thumbUri = Uri.parse(photoData);
+		} else {
+			final Uri contactUri = Uri.withAppendedPath(
+					Contacts.CONTENT_URI, photoData);
+			thumbUri =
+					Uri.withAppendedPath(
+							contactUri, Photo.CONTENT_DIRECTORY);
 		}
-		return null;
+
+		InputStream input;
+		try {
+			input = getContentResolver().openInputStream(thumbUri);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		}
+		if (input == null) {
+			return null;
+		}
+		return BitmapFactory.decodeStream(input);
 	}
 
 	@Override

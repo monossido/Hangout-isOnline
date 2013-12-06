@@ -5,16 +5,20 @@ import java.util.List;
 
 import org.jivesoftware.smack.packet.Presence;
 
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.provider.ContactsContract.QuickContact;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Filter;
 import android.widget.ImageView;
 import android.widget.QuickContactBadge;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.lorenzobraghetto.hangoutsisonline.logic.Friend;
@@ -43,6 +47,7 @@ public class ListAdapter extends BaseAdapter {
 	}
 
 	private class ViewHolder {
+		public RelativeLayout listrow;
 		public TextView name;
 		public TextView presence;
 		public ImageView status;
@@ -72,6 +77,7 @@ public class ListAdapter extends BaseAdapter {
 					.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			convertView = inflater.inflate(R.layout.listrow, null);
 			viewHolder = new ViewHolder();
+			viewHolder.listrow = (RelativeLayout) convertView.findViewById(R.id.listrow);
 			viewHolder.name = (TextView) convertView.findViewById(R.id.name);
 			viewHolder.presence = (TextView) convertView.findViewById(R.id.presence);
 			viewHolder.status = (ImageView) convertView.findViewById(R.id.status);
@@ -86,15 +92,28 @@ public class ListAdapter extends BaseAdapter {
 
 		processText(friend.getPresence());
 
-		Uri contactUri = friendsContactUri.get(position);
-		viewHolder.quickContact.assignContactUri(contactUri);
-		Bitmap picture = friendsContactPicture.get(position);
+		if (position <= friendsContactUri.size()) {
+			final Uri contactUri = friendsContactUri.get(position);
+			viewHolder.quickContact.assignContactUri(contactUri);
+			if (contactUri != null)
+				viewHolder.listrow.setOnClickListener(new OnClickListener() {
 
-		if (picture != null)
-			viewHolder.quickContact.setImageBitmap(picture);
-		else
-			viewHolder.quickContact.setImageResource(R.drawable.ic_contact_picture);
+					@Override
+					public void onClick(View v) {
+						try {
+							QuickContact.showQuickContact(mContext, viewHolder.quickContact, contactUri, QuickContact.MODE_MEDIUM, null);
+						} catch (ActivityNotFoundException e) {
+							e.printStackTrace();
+						}
+					}
+				});
+			Bitmap picture = friendsContactPicture.get(position);
 
+			if (picture != null)
+				viewHolder.quickContact.setImageBitmap(picture);
+			else
+				viewHolder.quickContact.setImageResource(R.drawable.ic_contact_picture);
+		}
 		return convertView;
 	}
 
